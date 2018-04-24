@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <cstdlib>
 
 #include "err.h"
 
 #define BUFFER_SIZE   2000
 #define QUEUE_LENGTH     5
-#define PORT_NUM     10001
 
 int main(int argc, char *argv[]) {
     int sock, msg_sock;
@@ -49,7 +49,9 @@ int main(int argc, char *argv[]) {
                           &client_address_len);
         if (msg_sock < 0)
             syserr("accept");
-        char negotiation_message[] = {255,251,1,255,251,3,255,252,34,0};
+        char negotiation_message[] = {(char)255,(char)251,(char)1,
+                                      (char)255,(char)251,(char)3,
+                                      (char)255,(char)252,(char)34,(char)0};
         strcpy(buffer,negotiation_message);
         snd_len = write(msg_sock, buffer, strlen(negotiation_message));
         if (snd_len != strlen(negotiation_message))
