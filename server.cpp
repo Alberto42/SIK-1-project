@@ -19,12 +19,12 @@ using namespace std;
 #define QUEUE_LENGTH     5
 #define DEBUG false
 
-int sock,port;
+int sock, port;
 int msg_sock;
 
-vector<string> menu_b_vector = {"Opcja B1","Opcja B2","Wstecz"};
-vector<string> menu_vector = {"Opcja A","Opcja B","Koniec"};
-Menu menu = Menu(menu_vector,0);
+vector<string> menu_b_vector = {"Opcja B1", "Opcja B2", "Wstecz"};
+vector<string> menu_vector = {"Opcja A", "Opcja B", "Koniec"};
+Menu menu = Menu(menu_vector, 0);
 
 int main(int argc, char *argv[]) {
 
@@ -33,23 +33,23 @@ int main(int argc, char *argv[]) {
     initialize_socket();
 
     for (;;) {
-        menu = Menu(menu_vector,0);
+        menu = Menu(menu_vector, 0);
         wait_for_client();
         negotiate();
-        display(menu,"");
+        display(menu, "");
 
         u_int8_t buffer[BUFFER_SIZE];
         ssize_t len;
-        vector<u_int8_t > data_received;
+        vector<u_int8_t> data_received;
         bool finish = false;
         do {
             len = read(msg_sock, buffer, sizeof(buffer));
             if (len < 0)
                 syserr("reading from client socket");
             else {
-                buffer[len]=0;
+                buffer[len] = 0;
 
-                for(int i=0;i<len;i++)
+                for (int i = 0; i < len; i++)
                     data_received.push_back(buffer[i]);
 
                 finish = onKeyPressed(data_received);
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "\n");
                 }
             }
-        } while (!finish);
+        } while (len > 0 && !finish);
 
         printf("ending connection\n");
         if (close(msg_sock) < 0)
@@ -69,46 +69,46 @@ int main(int argc, char *argv[]) {
     }
 }
 
-void display(const Menu& menu, string text) {
+void display(const Menu &menu, string text) {
     string buffer;
     const char *const move_cursor_to_left_upper_corner = "\033[2J\033[0;0H";
-    buffer+= move_cursor_to_left_upper_corner;
+    buffer += move_cursor_to_left_upper_corner;
 
-    for(int i=0;i<= menu.max_field;i++) {
-        buffer+="\r";
+    for (int i = 0; i <= menu.max_field; i++) {
+        buffer += "\r";
         if (menu.current_field == i) {
-            buffer+="  *  ";
+            buffer += "  *  ";
         } else {
-            buffer+="     ";
+            buffer += "     ";
         }
-        buffer+=menu.fields[i] + "\n";
+        buffer += menu.fields[i] + "\n";
     }
 
-    buffer+="\n" + text + "\n";
+    buffer += "\n" + text + "\n";
     const char *c_buffer = buffer.c_str();
     ssize_t snd_len = write(msg_sock, c_buffer, strlen(c_buffer));
     if (snd_len != strlen(c_buffer))
         syserr("writing to client socket");
 }
 
-vector<u_int8_t > up = {0x1b, 0x5b, 0x41};
-vector<u_int8_t > down = {0x1b, 0x5b, 0x42};
-vector<u_int8_t > enter = {0xd,0};
+vector<u_int8_t> up = {0x1b, 0x5b, 0x41};
+vector<u_int8_t> down = {0x1b, 0x5b, 0x42};
+vector<u_int8_t> enter = {0xd, 0};
 
 bool is_prefix(vector<u_int8_t> word, vector<u_int8_t> prefix) {
     if (prefix.size() > word.size())
         return false;
-    for(unsigned i=0;i<prefix.size();i++) {
+    for (unsigned i = 0; i < prefix.size(); i++) {
         if (prefix[i] != word[i])
             return false;
     }
     return true;
 }
 
-bool onKeyPressed(vector<u_int8_t>& key) {
+bool onKeyPressed(vector<u_int8_t> &key) {
 
     unsigned long previous_size = 100000;
-    while(key.size() < previous_size ) {
+    while (key.size() < previous_size) {
         previous_size = key.size();
         if (is_prefix(key, up)) {
             key.erase(key.begin(), key.begin() + up.size());
@@ -155,6 +155,7 @@ bool onKeyPressed(vector<u_int8_t>& key) {
     }
     return false;
 }
+
 void negotiate() {
     u_int8_t negotiation_message[] = {255, 251, 1,
                                       255, 251, 3,
@@ -162,7 +163,7 @@ void negotiate() {
     const int length = 10;
     ssize_t snd_len = write(msg_sock, negotiation_message, length);
     if (snd_len != length)
-            syserr("writing to client socket");
+        syserr("writing to client socket");
 }
 
 void wait_for_client() {
@@ -173,14 +174,13 @@ void wait_for_client() {
 
     // get client connection from the socket
     msg_sock = accept(sock, (struct sockaddr *) &client_address,
-                          &client_address_len);
+                      &client_address_len);
     printf("Client has connected\n");
     if (msg_sock < 0)
-            syserr("accept");
+        syserr("accept");
 }
 
-bool is_number(const std::string& s)
-{
+bool is_number(const std::string &s) {
     std::string::const_iterator it = s.begin();
     while (it != s.end() && std::isdigit(*it)) ++it;
     return !s.empty() && it == s.end();
