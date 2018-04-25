@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
         if (close(msg_sock) < 0)
             syserr("close");
     }
+    return 0;
 }
 
 void display(const Menu &menu, string text) {
@@ -208,12 +209,7 @@ void check_args(int argc, char *const *argv) {
 }
 
 void initialize_socket() {
-    int msg_sock;
     struct sockaddr_in server_address;
-    socklen_t client_address_len;
-
-    char buffer[BUFFER_SIZE];
-    ssize_t len, snd_len;
 
     sock = socket(PF_INET, SOCK_STREAM, 0); // creating IPv4 TCP socket
     if (sock < 0)
