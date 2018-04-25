@@ -68,28 +68,25 @@ string fromCodes(u_int8_t* codes, int length) {
 }
 
 void display(const Menu& menu, string text) {
-    char buffer[BUFFER_SIZE];
-    buffer[0] = 0;
-    strcat(buffer,"\033[2J\033[0;0H");
+    string buffer;
+    const char *const move_cursor_to_left_upper_corner = "\033[2J\033[0;0H";
+    buffer+= move_cursor_to_left_upper_corner;
 
     for(int i=0;i<= menu.max_field;i++) {
-        string move_to_left = "\033[" + to_string(i+1) + ";0H";
-        strcat(buffer,move_to_left.c_str());
+        buffer+="\r";
         if (menu.current_field == i) {
-            strcat(buffer,"  *  ");
+            buffer+="  *  ";
         } else {
-            strcat(buffer,"     ");
+            buffer+="     ";
         }
-        strcat(buffer,menu.fields[i].c_str());
-        strcat(buffer,"\n");
+        buffer+=menu.fields[i] + "\n";
     }
 
-    strcat(buffer,"\n");
-    strcat(buffer,(text + "\n").c_str() );
-    ssize_t snd_len = write(msg_sock, buffer, strlen(buffer));
-    if (snd_len != strlen(buffer))
+    buffer+="\n" + text + "\n";
+    const char *c_buffer = buffer.c_str();
+    ssize_t snd_len = write(msg_sock, c_buffer, strlen(c_buffer));
+    if (snd_len != strlen(c_buffer))
         syserr("writing to client socket");
-    fprintf(stderr, "%s",buffer);
 }
 
 u_int8_t up[] = {0x1b, 0x5b, 0x41};
