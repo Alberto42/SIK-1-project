@@ -19,20 +19,10 @@ using namespace std;
 
 int sock,port;
 int msg_sock;
-sockaddr_in client_address;
-socklen_t client_address_len;
-char buffer[2000];
-ssize_t len;
-ssize_t snd_len;
 
 vector<string> menu_b_vector = {"Opcja B1","Opcja B2","Wstecz"};
 vector<string> menu_vector = {"Opcja A","Opcja B","Koniec"};
 Menu menu = Menu(menu_vector,0);
-u_int8_t up[] = {0x1b, 0x5b, 0x41};
-u_int8_t down[] = {0x1b, 0x5b, 0x42};
-u_int8_t enter[] = {0xd,1};
-
-void negotiate();
 
 int main(int argc, char *argv[]) {
 
@@ -45,6 +35,8 @@ int main(int argc, char *argv[]) {
         negotiate();
         display(menu,"");
 
+        char buffer[BUFFER_SIZE];
+        ssize_t len;
         do {
             len = read(msg_sock, buffer, sizeof(buffer));
             if (len < 0)
@@ -66,8 +58,6 @@ int main(int argc, char *argv[]) {
         if (close(msg_sock) < 0)
             syserr("close");
     }
-
-    return 0;
 }
 string fromCodes(u_int8_t* codes, int length) {
     string result;
@@ -81,6 +71,7 @@ void display(const Menu& menu, string text) {
     char buffer[BUFFER_SIZE];
     buffer[0] = 0;
     strcat(buffer,"\033[2J\033[0;0H");
+
     for(int i=0;i<= menu.max_field;i++) {
         string move_to_left = "\033[" + to_string(i+1) + ";0H";
         strcat(buffer,move_to_left.c_str());
@@ -92,19 +83,26 @@ void display(const Menu& menu, string text) {
         strcat(buffer,menu.fields[i].c_str());
         strcat(buffer,"\n");
     }
+
     strcat(buffer,"\n");
     strcat(buffer,(text + "\n").c_str() );
-    snd_len = write(msg_sock, buffer, strlen(buffer));
+    ssize_t snd_len = write(msg_sock, buffer, strlen(buffer));
     if (snd_len != strlen(buffer))
         syserr("writing to client socket");
-    fprintf(stderr, buffer);
+    fprintf(stderr, "%s",buffer);
 }
+
+u_int8_t up[] = {0x1b, 0x5b, 0x41};
+u_int8_t down[] = {0x1b, 0x5b, 0x42};
+u_int8_t enter[] = {0xd,1};
+
 void onKeyPressed(const char* keyc) {
     string key(keyc);
 
     string up_str = fromCodes(up,3);
     string down_str = fromCodes(down,3);
     string enter_str = fromCodes(enter,2);
+
     if (key == up_str) {
         menu.current_field=max(menu.min_field,menu.current_field-1);
         display(menu,"");
@@ -137,21 +135,25 @@ void onKeyPressed(const char* keyc) {
             }
         }
     }
-//    if (key == "")
 }
 void negotiate() {
-    char negotiation_message[] = {(char)255, (char)251, (char)1,
-                                  (char)255, (char)251, (char)3,
-                                  (char)255, (char)252, (char)34, (char)0};
+    u_int8_t negotiation_message[] = {255, 251, 1,
+                                      255, 251, 3,
+                                      255, 252, 34, 0};
+    const int length = 10;
+    string negotiation_message_str = fromCodes(negotiation_message,length);
 
-    strcpy(buffer,negotiation_message);
-    snd_len = write(msg_sock, buffer, strlen(negotiation_message));
-    if (snd_len != strlen(negotiation_message))
+    ssize_t snd_len = write(msg_sock, negotiation_message_str.c_str(), length);
+    if (snd_len != length)
             syserr("writing to client socket");
 }
 
 void wait_for_client() {
+    sockaddr_in client_address;
+    socklen_t client_address_len;
+
     client_address_len = sizeof(client_address);
+
     // get client connection from the socket
     msg_sock = accept(sock, (struct sockaddr *) &client_address,
                           &client_address_len);
@@ -159,15 +161,31 @@ void wait_for_client() {
             syserr("accept");
 }
 
+bool is_number(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
+void wrong_args() {
+    printf("Usage: ./server <port> \n");
+    exit(1);
+}
+
 void check_args(int argc, char *const *argv) {
     if (argc != 2) {
-        printf("Usage: ./server <port> \n");
-        exit(-1);
+        wrong_args();
+        return;
+    }
+    if (!is_number(string(argv[1]))) {
+        wrong_args();
+        return;
     }
     port = atoi(argv[1]);
     if (port < 0 || port > 65536) {
-        printf("Usage: ./server <port> \n");
-        exit(-1);
+        wrong_args();
+        return;
     }
 }
 

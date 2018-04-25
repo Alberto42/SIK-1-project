@@ -27,5 +27,7 @@ struct Menu {
 };
 void display(const Menu& menu, string text);
 
+void negotiate();
+
 void wait_for_client();
 #endif //SIK_ZADANIE_1_SERVER_H
