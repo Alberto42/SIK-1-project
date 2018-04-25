@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include "err.h"
 #include "server.h"
@@ -28,24 +29,28 @@ int main(int argc, char *argv[]) {
 
     check_args(argc, argv);
 
-    prepare_socket();
+    initialize_socket();
 
     for (;;) {
         wait_for_client();
         negotiate();
         display(menu,"");
 
-        char buffer[BUFFER_SIZE];
+        u_int8_t buffer[BUFFER_SIZE];
         ssize_t len;
+        vector<u_int8_t > data_received;
         do {
             len = read(msg_sock, buffer, sizeof(buffer));
             if (len < 0)
                 syserr("reading from client socket");
             else {
                 buffer[len]=0;
-                if (buffer[1] == 0) // zrob cos z tym
-                    buffer[1] = 1;
-                onKeyPressed(buffer);
+
+                for(int i=0;i<len;i++)
+                    data_received.push_back(buffer[i]);
+
+                onKeyPressed(data_received);
+
                 fprintf(stderr,"read from socket: %zd bytes: ", len);
                 for(int i=0;i < len;i++) {
                     fprintf(stderr,"%x ",buffer[i] & 0xff);
@@ -58,13 +63,6 @@ int main(int argc, char *argv[]) {
         if (close(msg_sock) < 0)
             syserr("close");
     }
-}
-string fromCodes(u_int8_t* codes, int length) {
-    string result;
-    for(int i=0;i < length;i++) {
-        result+=(char)codes[i];
-    }
-    return result;
 }
 
 void display(const Menu& menu, string text) {
@@ -89,47 +87,63 @@ void display(const Menu& menu, string text) {
         syserr("writing to client socket");
 }
 
-u_int8_t up[] = {0x1b, 0x5b, 0x41};
-u_int8_t down[] = {0x1b, 0x5b, 0x42};
-u_int8_t enter[] = {0xd,1};
+vector<u_int8_t > up = {0x1b, 0x5b, 0x41};
+vector<u_int8_t > down = {0x1b, 0x5b, 0x42};
+vector<u_int8_t > enter = {0xd,0};
 
-void onKeyPressed(const char* keyc) {
-    string key(keyc);
+bool is_prefix(vector<u_int8_t> word, vector<u_int8_t> prefix) {
+    if (prefix.size() > word.size())
+        return false;
+    for(unsigned i=0;i<prefix.size();i++) {
+        if (prefix[i] != word[i])
+            return false;
+    }
+    return true;
+}
 
-    string up_str = fromCodes(up,3);
-    string down_str = fromCodes(down,3);
-    string enter_str = fromCodes(enter,2);
+void onKeyPressed(vector<u_int8_t>& key) {
 
-    if (key == up_str) {
-        menu.current_field=max(menu.min_field,menu.current_field-1);
-        display(menu,"");
-    } else if (key == down_str) {
-        menu.current_field=min(menu.max_field,menu.current_field+1);
-        display(menu,"");
-    } else if (key == enter_str) {
-        if (menu.type == 0) {
-            switch(menu.current_field) {
-                case 0:
-                    display(menu, "A");
-                    break;
-                case 1:
-                    menu = Menu(menu_b_vector,1);
-                    display(menu,"");
-                    break;
+    unsigned long previous_size = 100000;
+    while(key.size() < previous_size ) {
+        previous_size = key.size();
+        if (is_prefix(key, up)) {
+            key.erase(key.begin(), key.begin() + up.size());
+            menu.current_field = max(menu.min_field, menu.current_field - 1);
+            display(menu, "");
+        } else if (is_prefix(key, down)) {
+            key.erase(key.begin(), key.begin() + down.size());
+            menu.current_field = min(menu.max_field, menu.current_field + 1);
+            display(menu, "");
+        } else if (is_prefix(key, enter)) {
+
+            key.erase(key.begin(), key.begin() + enter.size());
+            if (menu.type == 0) {
+                switch (menu.current_field) {
+                    case 0:
+                        display(menu, "A");
+                        break;
+                    case 1:
+                        menu = Menu(menu_b_vector, 1);
+                        display(menu, "");
+                        break;
+                }
+            } else {
+                switch (menu.current_field) {
+                    case 0:
+                        display(menu, "B1");
+                        break;
+                    case 1:
+                        display(menu, "B2");
+                        break;
+                    case 2:
+                        menu = Menu(menu_vector, 0);
+                        display(menu, "");
+                        break;
+                }
             }
-        } else {
-            switch(menu.current_field) {
-                case 0:
-                    display(menu, "B1");
-                    break;
-                case 1:
-                    display(menu, "B2");
-                    break;
-                case 2:
-                    menu = Menu(menu_vector,0);
-                    display(menu, "");
-                    break;
-            }
+        } else if (key.size() >= 3) {
+            fprintf(stderr, "%s", "Wrong data received\n");
+            key.clear();
         }
     }
 }
@@ -138,9 +152,7 @@ void negotiate() {
                                       255, 251, 3,
                                       255, 252, 34, 0};
     const int length = 10;
-    string negotiation_message_str = fromCodes(negotiation_message,length);
-
-    ssize_t snd_len = write(msg_sock, negotiation_message_str.c_str(), length);
+    ssize_t snd_len = write(msg_sock, negotiation_message, length);
     if (snd_len != length)
             syserr("writing to client socket");
 }
@@ -186,7 +198,7 @@ void check_args(int argc, char *const *argv) {
     }
 }
 
-void prepare_socket() {
+void initialize_socket() {
     int msg_sock;
     struct sockaddr_in server_address;
     socklen_t client_address_len;

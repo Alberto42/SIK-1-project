@@ -6,10 +6,10 @@
 #define SIK_ZADANIE_1_SERVER_H
 #include <vector>
 using namespace std;
-void prepare_socket();
+void initialize_socket();
 
 void check_args(int argc, char *const *argv);
-void onKeyPressed(const char* keyc);
+void onKeyPressed(vector<u_int8_t>& key);
 struct Menu {
     vector<string> fields;
     int type=0;

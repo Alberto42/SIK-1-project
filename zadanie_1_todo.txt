@@ -1,0 +1,42 @@
+Po zaakceptowaniu połączenia od klienta serwer wypisuje na standardowe wyjście
+informację, że klient się podłączył.
+
+
+Po wybraniu opcji Koniec serwer wypisuje na standardowe wyjście
+informację, że klient się odłączył i zamyka połączenie z klientem, ale nie
+kończy działania – czeka na kolejnego klienta. Klienty są obsługiwane
+sekwencyjnie.
+
+ Opcjonalnie można dodać powrót przez wciśnięcie PgUp.
+
+Porty od 1
+
+Serwer powinien być odporny na na dowolne dane odebrane od klienta. W przypadku
+otrzymania nieprawidłowych (złośliwych) danych serwer powinien je ignorować
+i kontynuować działanie.
+
+
+– powinno działać w środowisku Linux w laboratorium komputerowym
+– powinno kompilować się za pomocą GCC (polecenie gcc lub g++)
+  z parametrami -Wall -Wextra -O2 oraz -std=c11 lub -std=C++17
+
+Jako rozwiązanie należy dostarczyć pliki źródłowe z rozszerzeniem .c lub .cc
+oraz niezbędne pliki nagłówkowe. Wszystkie potrzebne do skompilowania serwera
+pliki należy umieścić na maszynie students w katalogu
+
+/home/students/inf/PUBLIC/SIK/students/ab123456/zadanie1/
+
+gdzie ab123456 to standardowy login osoby oddającej rozwiązanie, używany
+na maszynach wydziału, wg schematu: inicjały, nr indeksu.
+
+W powyższym katalogu nie wolno umieszczać żadnych innych plików.
+
+
+
+Ocena zadania będzie składała się z trzech składników:
+
+– ocena wzrokowa działania programu (40%)
+– testy automatyczne (40%)
+– jakość kodu źródłowego (20%)
+
+Każda rozpoczęta minuta spóźnienia będzie kosztowała 0,01 punktu.
