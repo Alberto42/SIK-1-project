@@ -1,16 +1,3 @@
-Po zaakceptowaniu połączenia od klienta serwer wypisuje na standardowe wyjście
-informację, że klient się podłączył.
-
-
-Po wybraniu opcji Koniec serwer wypisuje na standardowe wyjście
-informację, że klient się odłączył i zamyka połączenie z klientem, ale nie
-kończy działania – czeka na kolejnego klienta. Klienty są obsługiwane
-sekwencyjnie.
-
- Opcjonalnie można dodać powrót przez wciśnięcie PgUp.
-
-Porty od 1
-
 Serwer powinien być odporny na na dowolne dane odebrane od klienta. W przypadku
 otrzymania nieprawidłowych (złośliwych) danych serwer powinien je ignorować
 i kontynuować działanie.
@@ -40,3 +27,6 @@ Ocena zadania będzie składała się z trzech składników:
 – jakość kodu źródłowego (20%)
 
 Każda rozpoczęta minuta spóźnienia będzie kosztowała 0,01 punktu.
+
+Przetestowac czy dziala wiele klientow
+

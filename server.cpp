@@ -17,6 +17,7 @@ using namespace std;
 
 #define BUFFER_SIZE   2000
 #define QUEUE_LENGTH     5
+#define DEBUG false
 
 int sock,port;
 int msg_sock;
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
     initialize_socket();
 
     for (;;) {
+        menu = Menu(menu_vector,0);
         wait_for_client();
         negotiate();
         display(menu,"");
@@ -39,6 +41,7 @@ int main(int argc, char *argv[]) {
         u_int8_t buffer[BUFFER_SIZE];
         ssize_t len;
         vector<u_int8_t > data_received;
+        bool finish = false;
         do {
             len = read(msg_sock, buffer, sizeof(buffer));
             if (len < 0)
@@ -49,15 +52,16 @@ int main(int argc, char *argv[]) {
                 for(int i=0;i<len;i++)
                     data_received.push_back(buffer[i]);
 
-                onKeyPressed(data_received);
-
-                fprintf(stderr,"read from socket: %zd bytes: ", len);
-                for(int i=0;i < len;i++) {
-                    fprintf(stderr,"%x ",buffer[i] & 0xff);
+                finish = onKeyPressed(data_received);
+                if (DEBUG) {
+                    fprintf(stderr, "read from socket: %zd bytes: ", len);
+                    for (int i = 0; i < len; i++) {
+                        fprintf(stderr, "%x ", buffer[i] & 0xff);
+                    }
+                    fprintf(stderr, "\n");
                 }
-                fprintf(stderr,"\n");
             }
-        } while (len > 0);
+        } while (!finish);
 
         printf("ending connection\n");
         if (close(msg_sock) < 0)
@@ -101,7 +105,7 @@ bool is_prefix(vector<u_int8_t> word, vector<u_int8_t> prefix) {
     return true;
 }
 
-void onKeyPressed(vector<u_int8_t>& key) {
+bool onKeyPressed(vector<u_int8_t>& key) {
 
     unsigned long previous_size = 100000;
     while(key.size() < previous_size ) {
@@ -126,6 +130,8 @@ void onKeyPressed(vector<u_int8_t>& key) {
                         menu = Menu(menu_b_vector, 1);
                         display(menu, "");
                         break;
+                    case 2:
+                        return true;
                 }
             } else {
                 switch (menu.current_field) {
@@ -142,10 +148,12 @@ void onKeyPressed(vector<u_int8_t>& key) {
                 }
             }
         } else if (key.size() >= 3) {
-            fprintf(stderr, "%s", "Wrong data received\n");
+            if (DEBUG)
+                fprintf(stderr, "%s", "Wrong data received\n");
             key.clear();
         }
     }
+    return false;
 }
 void negotiate() {
     u_int8_t negotiation_message[] = {255, 251, 1,
@@ -166,6 +174,7 @@ void wait_for_client() {
     // get client connection from the socket
     msg_sock = accept(sock, (struct sockaddr *) &client_address,
                           &client_address_len);
+    printf("Client has connected\n");
     if (msg_sock < 0)
             syserr("accept");
 }
@@ -192,7 +201,7 @@ void check_args(int argc, char *const *argv) {
         return;
     }
     port = atoi(argv[1]);
-    if (port < 0 || port > 65536) {
+    if (port <= 0 || port > 65536) {
         wrong_args();
         return;
     }

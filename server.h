@@ -9,7 +9,7 @@ using namespace std;
 void initialize_socket();
 
 void check_args(int argc, char *const *argv);
-void onKeyPressed(vector<u_int8_t>& key);
+bool onKeyPressed(vector<u_int8_t>& key);
 struct Menu {
     vector<string> fields;
     int type=0;
