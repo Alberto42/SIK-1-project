@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <deque>
 
 #include "err.h"
 #include "server.h"
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
 
         u_int8_t buffer[BUFFER_SIZE];
         ssize_t len;
-        vector<u_int8_t> data_received;
+        deque<u_int8_t> data_received;
         bool finish = false;
         do {
             len = read(msg_sock, buffer, sizeof(buffer));
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
         printf("ending connection\n");
         if (close(msg_sock) < 0)
             syserr("close");
+        data_received.clear();
     }
     return 0;
 }
@@ -77,15 +79,10 @@ void display(const Menu &menu, string text) {
 
     for (int i = 0; i <= menu.max_field; i++) {
         buffer += "\r";
-        if (menu.current_field == i) {
-            buffer += "  *  ";
-        } else {
-            buffer += "     ";
-        }
         buffer += menu.fields[i] + "\n";
     }
 
-    buffer += "\n" + text + "\n";
+    buffer += "\n" + text + "\n" + "\033[" + to_string(menu.current_field+1) + ";0H";
     const char *c_buffer = buffer.c_str();
     ssize_t snd_len = write(msg_sock, c_buffer, strlen(c_buffer));
     if (snd_len != strlen(c_buffer))
@@ -96,7 +93,7 @@ vector<u_int8_t> up = {0x1b, 0x5b, 0x41};
 vector<u_int8_t> down = {0x1b, 0x5b, 0x42};
 vector<u_int8_t> enter = {0xd, 0};
 
-bool is_prefix(vector<u_int8_t> word, vector<u_int8_t> prefix) {
+bool is_prefix(deque<u_int8_t> word, vector<u_int8_t> prefix) {
     if (prefix.size() > word.size())
         return false;
     for (unsigned i = 0; i < prefix.size(); i++) {
@@ -106,7 +103,7 @@ bool is_prefix(vector<u_int8_t> word, vector<u_int8_t> prefix) {
     return true;
 }
 
-bool onKeyPressed(vector<u_int8_t> &key) {
+bool onKeyPressed(deque<u_int8_t> &key) {
 
     unsigned long previous_size = 100000;
     while (key.size() < previous_size) {
