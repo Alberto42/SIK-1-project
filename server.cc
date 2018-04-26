@@ -185,7 +185,7 @@ bool is_number(const std::string &s) {
 }
 
 void wrong_args() {
-    printf("Usage: ./server <port> \n");
+    fprintf(stderr,"Usage: ./server <port> \n");
     exit(1);
 }
 
