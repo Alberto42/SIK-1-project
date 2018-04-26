@@ -85,7 +85,7 @@ void display(const Menu &menu, string text) {
     buffer += "\n" + text + "\n" + "\033[" + to_string(menu.current_field+1) + ";0H";
     const char *c_buffer = buffer.c_str();
     ssize_t snd_len = write(msg_sock, c_buffer, strlen(c_buffer));
-    if (snd_len != strlen(c_buffer))
+    if (snd_len != (unsigned)strlen(c_buffer))
         syserr("writing to client socket");
 }
 

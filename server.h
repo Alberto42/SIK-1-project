@@ -22,6 +22,7 @@ struct Menu {
         this->fields = other.fields;
         this->type = other.type;
         this->current_field = 0;
+        return *this;
     }
     Menu();
 };
