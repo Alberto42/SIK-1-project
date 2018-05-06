@@ -82,7 +82,7 @@ void display(const Menu &menu, string text) {
         buffer += menu.fields[i] + "\n";
     }
 
-    buffer += "\n" + text + "\n" + "\033[" + to_string(menu.current_field+1) + ";0H";
+    buffer += "\n\r" + text + "\n" + "\033[" + to_string(menu.current_field+1) + ";0H";
     const char *c_buffer = buffer.c_str();
     ssize_t snd_len = write(msg_sock, c_buffer, strlen(c_buffer));
     if (snd_len != (unsigned)strlen(c_buffer))
@@ -156,9 +156,8 @@ bool onKeyPressed(deque<u_int8_t> &key) {
 
 void negotiate() {
     u_int8_t negotiation_message[] = {255, 251, 1,
-                                      255, 251, 3,
-                                      255, 252, 34, 0};
-    const int length = 10;
+                                      255, 251, 3};
+    const int length = 6;
     ssize_t snd_len = write(msg_sock, negotiation_message, length);
     if (snd_len != length)
         syserr("writing to client socket");
